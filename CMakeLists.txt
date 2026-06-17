@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 cmake_policy(SET CMP0048 NEW)
 project(glob-cpp VERSION 1.1.1)
 
