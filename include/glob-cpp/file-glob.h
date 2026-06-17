@@ -322,6 +322,13 @@ class FileGlog {
       j++;
     }
 
+    // Skip hidden files unless the filename pattern explicitly starts with '.'
+    if (IsHidden(real_path)
+        && !vec_glob_path.empty()
+        && vec_glob_path.back()[0] != '.') {
+      return false;
+    }
+
     PathMatch<charT> path_res{real_path, std::move(match_res)};
     vec_res.push_back(std::move(path_res));
     return true;

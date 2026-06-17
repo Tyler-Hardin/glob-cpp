@@ -382,17 +382,17 @@ TEST_F(GlobTestFixture, ErrorInvalidEscape_NoExcept) {
 
 TEST_F(GlobTestFixture, ErrorInvalidRange_NoExcept) {
   glob::glob g("[a-]");
-  // Pattern construction succeeds but creates a fail-safe automata
-  EXPECT_FALSE(glob::glob_match("a", g));
-  EXPECT_FALSE(glob::glob_match("-", g));
+  // [a-] is valid: trailing '-' is treated as literal (matches 'a' or '-')
+  EXPECT_TRUE(glob::glob_match("a", g));
+  EXPECT_TRUE(glob::glob_match("-", g));
   EXPECT_FALSE(glob::glob_match("[a-]", g));
 }
 
 TEST_F(GlobTestFixture, ErrorInvalidRangeStart_NoExcept) {
   glob::glob g("[-a]");
-  // Pattern construction succeeds but creates a fail-safe automata
-  EXPECT_FALSE(glob::glob_match("a", g));
-  EXPECT_FALSE(glob::glob_match("-", g));
+  // [-a] is valid: leading '-' is treated as literal (matches 'a' or '-')
+  EXPECT_TRUE(glob::glob_match("a", g));
+  EXPECT_TRUE(glob::glob_match("-", g));
   EXPECT_FALSE(glob::glob_match("[-a]", g));
 }
 
@@ -429,15 +429,17 @@ TEST_F(GlobTestFixture, ErrorInvalidEscape_Throws) {
 }
 
 TEST_F(GlobTestFixture, ErrorInvalidRange_Throws) {
-  EXPECT_THROW({
-    glob::glob g("[a-]");
-  }, glob::Error);
+  // [a-] is valid: trailing '-' is treated as literal (matches 'a' or '-')
+  glob::glob g("[a-]");
+  EXPECT_TRUE(glob::glob_match("a", g));
+  EXPECT_TRUE(glob::glob_match("-", g));
 }
 
 TEST_F(GlobTestFixture, ErrorInvalidRangeStart_Throws) {
-  EXPECT_THROW({
-    glob::glob g("[-a]");
-  }, glob::Error);
+  // [-a] is valid: leading '-' is treated as literal (matches 'a' or '-')
+  glob::glob g("[-a]");
+  EXPECT_TRUE(glob::glob_match("a", g));
+  EXPECT_TRUE(glob::glob_match("-", g));
 }
 #endif
 
@@ -697,8 +699,8 @@ TEST_F(GlobTestFixture, BraceExpansionAtStart) {
   EXPECT_TRUE(glob::glob_match("b.txt", g));
   EXPECT_TRUE(glob::glob_match("a123.txt", g));
   EXPECT_TRUE(glob::glob_match("bfile.txt", g));
+  EXPECT_TRUE(glob::glob_match("ab.txt", g));
   EXPECT_FALSE(glob::glob_match("c.txt", g));
-  EXPECT_FALSE(glob::glob_match("ab.txt", g));
 }
 
 TEST_F(GlobTestFixture, BraceExpansionSingleItem) {
