@@ -2020,6 +2020,10 @@ class AstConsumer {
       case GroupNode<charT>::GroupType::NEG:
         state_group_type = StateGroup<charT>::Type::NEG;
         break;
+
+      default:
+        state_group_type = StateGroup<charT>::Type::BASIC;
+        break;
     }
     
     // Create state and get its position

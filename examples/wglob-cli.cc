@@ -1,19 +1,56 @@
 // wglob-cli.cc
 #include <iostream>
 #include <string>
-#include <locale>
-#include <codecvt>
+#include <stdexcept>
 
 #include "glob-cpp/glob.h"
 
-// Helper to convert UTF-8 std::string_view to std::wstring
+// Helper to convert UTF-8 std::string_view to std::wstring.
+// Hand-rolled decoder that avoids std::wstring_convert / <codecvt>
+// (deprecated in C++17, removed in C++26).
 std::wstring utf8_to_wstring(const std::string_view& utf8)
 {
-  // deprecated in C++17 and removed in C++26
-  // does the job for now but we will need a different way to convert
-  // utf8 to utf32 in the future
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-  return converter.from_bytes(utf8.data());
+  std::wstring result;
+  result.reserve(utf8.size());
+
+  for (std::size_t i = 0; i < utf8.size(); ) {
+    const auto byte = static_cast<unsigned char>(utf8[i]);
+
+    // Determine the code point and how many bytes it spans.
+    unsigned int cp;
+    std::size_t extra;
+
+    if (byte <= 0x7F) {
+      cp = byte;
+      extra = 0;
+    } else if ((byte & 0xE0) == 0xC0) {
+      cp = byte & 0x1F;
+      extra = 1;
+    } else if ((byte & 0xF0) == 0xE0) {
+      cp = byte & 0x0F;
+      extra = 2;
+    } else if ((byte & 0xF8) == 0xF0) {
+      cp = byte & 0x07;
+      extra = 3;
+    } else {
+      throw std::runtime_error("invalid UTF-8 lead byte");
+    }
+
+    if (i + 1 + extra > utf8.size())
+      throw std::runtime_error("truncated UTF-8 sequence");
+
+    for (std::size_t j = 0; j < extra; ++j) {
+      const auto c = static_cast<unsigned char>(utf8[i + 1 + j]);
+      if ((c & 0xC0) != 0x80)
+        throw std::runtime_error("invalid UTF-8 continuation byte");
+      cp = (cp << 6) | (c & 0x3F);
+    }
+
+    result.push_back(static_cast<wchar_t>(cp));
+    i += 1 + extra;
+  }
+
+  return result;
 }
 
 int main(int argc, char* argv[])
